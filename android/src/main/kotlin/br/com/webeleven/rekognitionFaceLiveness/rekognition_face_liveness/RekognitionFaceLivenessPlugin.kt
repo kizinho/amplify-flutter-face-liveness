@@ -6,6 +6,7 @@ import io.flutter.plugin.common.EventChannel
 import android.util.Log
 import com.amplifyframework.auth.cognito.AWSCognitoAuthPlugin
 import com.amplifyframework.core.Amplify
+import com.amplifyframework.core.AlreadyConfiguredException
 
 /** FaceLivenessDetectorPlugin */
 class FaceLivenessDetectorPlugin: FlutterPlugin {
@@ -23,13 +24,13 @@ class FaceLivenessDetectorPlugin: FlutterPlugin {
       .platformViewRegistry
       .registerViewFactory("face_liveness_view", FaceLivenessViewFactory(handler))
 
-    // Only add plugins and configure once (main engine). Skip in background engine (e.g. FCM)
-    // to avoid AlreadyConfiguredException.
-    if (!Amplify.isConfigured) {
+    // Only add plugins and configure once (main engine). In background engine (e.g. FCM)
+    // Amplify is already configured -> catch AlreadyConfiguredException and skip.
+    try {
       Amplify.addPlugin(AWSCognitoAuthPlugin())
       Amplify.configure(flutterPluginBinding.applicationContext)
       Log.i(TAG, "FaceLivenessPlugin initialized with custom credentials provider")
-    } else {
+    } catch (e: AlreadyConfiguredException) {
       Log.i(TAG, "Amplify already configured; skipping in secondary engine")
     }
   }
