@@ -10,7 +10,7 @@ import com.amplifyframework.core.Amplify
 /** FaceLivenessDetectorPlugin */
 class FaceLivenessDetectorPlugin: FlutterPlugin {
   private val TAG = "FaceLivenessPlugin"
-  
+
   /// The event channel that will handle communication between Flutter and native Android
   private lateinit var eventChannel : EventChannel
 
@@ -23,10 +23,15 @@ class FaceLivenessDetectorPlugin: FlutterPlugin {
       .platformViewRegistry
       .registerViewFactory("face_liveness_view", FaceLivenessViewFactory(handler))
 
-    Amplify.addPlugin(AWSCognitoAuthPlugin())
-    Amplify.configure(flutterPluginBinding.applicationContext)
-      
-    Log.i(TAG, "FaceLivenessPlugin initialized with custom credentials provider")
+    // Only add plugins and configure once (main engine). Skip in background engine (e.g. FCM)
+    // to avoid AlreadyConfiguredException.
+    if (!Amplify.isConfigured) {
+      Amplify.addPlugin(AWSCognitoAuthPlugin())
+      Amplify.configure(flutterPluginBinding.applicationContext)
+      Log.i(TAG, "FaceLivenessPlugin initialized with custom credentials provider")
+    } else {
+      Log.i(TAG, "Amplify already configured; skipping in secondary engine")
+    }
   }
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -39,7 +44,7 @@ class FaceLivenessDetectorPlugin: FlutterPlugin {
 class RekognitionFaceLivenessPlugin: FlutterPlugin {
   private val TAG = "FaceLivenessPlugin"
   private val delegate = FaceLivenessDetectorPlugin()
-  
+
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     delegate.onAttachedToEngine(flutterPluginBinding)
   }
